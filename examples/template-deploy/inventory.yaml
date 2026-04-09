@@ -1,0 +1,27 @@
+# Example: Template-based configuration deployment
+# Demonstrates: template tasks with Go template rendering
+
+hosts:
+  - name: api-server-1
+    host: 10.1.1.10
+    user: deploy
+    key_file: ~/.ssh/id_rsa
+    vars:
+      server_port: 8080
+      server_name: api-prod-1
+      db_host: db.internal.local
+      db_port: 5432
+  - name: api-server-2
+    host: 10.1.1.11
+    user: deploy
+    key_file: ~/.ssh/id_rsa
+    vars:
+      server_port: 8081
+      server_name: api-prod-2
+      db_host: db.internal.local
+      db_port: 5432
+
+groups:
+  api_servers:
+    - api-server-1
+    - api-server-2

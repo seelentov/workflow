@@ -1,0 +1,52 @@
+# Deploy templated configuration files
+# Demonstrates: template task - render Go template locally, upload to remote host
+#
+# Create a file called "configs/app.conf.tpl" in this directory with content like:
+#
+#   [server]
+#   host = 0.0.0.0
+#   port = {{ .server_port }}
+#   name = {{ .server_name }}
+#
+#   [database]
+#   host = {{ .db_host }}
+#   port = {{ .db_port }}
+#   max_connections = 100
+#
+#   [logging]
+#   level = info
+#   output = /var/log/{{ .server_name }}/app.log
+
+- name: Deploy templated configurations
+  hosts: api_servers
+  tasks:
+    - name: Create log directory
+      shell: mkdir -p /var/log/{{ .server_name }}
+
+    - name: Deploy application config from template
+      template:
+        src: ./configs/app.conf.tpl
+        dest: /etc/myapp/app.conf
+        mode: "0644"
+
+    - name: Deploy nginx upstream config from template
+      template:
+        src: ./configs/upstream.conf.tpl
+        dest: /etc/nginx/conf.d/upstream.conf
+        mode: "0644"
+      ignore_errors: true
+
+    - name: Validate configuration
+      shell: |
+        echo "Checking config file exists and is valid..."
+        cat /etc/myapp/app.conf
+        echo "---"
+        echo "Configuration deployed successfully for {{ .server_name }}"
+
+    - name: Restart application service
+      shell: systemctl restart myapp
+      ignore_errors: true
+
+    - name: Verify service is healthy
+      shell: systemctl is-active myapp
+      ignore_errors: true
