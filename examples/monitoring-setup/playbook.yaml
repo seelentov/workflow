@@ -1,0 +1,63 @@
+# Install and configure monitoring agents on all nodes
+- name: Install Node Exporter on all nodes
+  hosts: nodes
+  vars:
+    exporter_port: 9100
+  tasks:
+    - name: Download Node Exporter
+      shell: |
+        wget -q https://github.com/prometheus/node_exporter/releases/download/v1.7.0/node_exporter-1.7.0.linux-amd64.tar.gz -O /tmp/node_exporter.tar.gz || true
+
+    - name: Extract Node Exporter
+      shell: |
+        tar xzf /tmp/node_exporter.tar.gz -C /tmp/ 2>/dev/null || true
+        cp /tmp/node_exporter-*/node_exporter /usr/local/bin/ 2>/dev/null || true
+
+    - name: Create systemd service for Node Exporter
+      shell: |
+        cat > /etc/systemd/system/node_exporter.service <<EOF
+        [Unit]
+        Description=Node Exporter
+        Wants=network-online.target
+        After=network-online.target
+
+        [Service]
+        User=root
+        ExecStart=/usr/local/bin/node_exporter --web.listen-address=:{{ .exporter_port }}
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+        EOF
+
+    - name: Enable and start Node Exporter
+      shell: systemctl daemon-reload && systemctl enable --now node_exporter.service
+      ignore_errors: true
+
+    - name: Verify Node Exporter is running
+      shell: systemctl is-active node_exporter
+      ignore_errors: true
+
+- name: Configure Prometheus server
+  hosts: monitoring
+  vars:
+    scrape_interval: 15s
+  tasks:
+    - name: Create Prometheus config directory
+      shell: mkdir -p /etc/prometheus
+
+    - name: Generate prometheus.yml
+      shell: |
+        cat > /etc/prometheus/prometheus.yml <<EOF
+        global:
+          scrape_interval: {{ .scrape_interval }}
+
+        scrape_configs:
+          - job_name: 'nodes'
+            static_configs:
+              - targets: ['172.16.0.20:9100', '172.16.0.21:9100', '172.16.0.22:9100']
+        EOF
+
+    - name: Restart Prometheus
+      shell: systemctl restart prometheus
+      ignore_errors: true

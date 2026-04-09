@@ -1,0 +1,23 @@
+# Example: Database server inventory
+# Demonstrates: different users, password auth, host vars
+
+hosts:
+  - name: postgres-primary
+    host: 10.0.1.100
+    user: postgres
+    key_file: ~/.ssh/id_rsa
+    vars:
+      db_name: production
+      backup_dir: /var/backups/postgres
+  - name: postgres-replica
+    host: 10.0.1.101
+    user: postgres
+    password: secretpass
+    vars:
+      db_name: production
+      backup_dir: /var/backups/postgres
+
+groups:
+  database:
+    - postgres-primary
+    - postgres-replica

@@ -1,0 +1,17 @@
+# Example: Servers with tagged tasks
+# Demonstrates: task tags for selective execution
+
+hosts:
+  - name: prod-web1
+    host: 192.168.10.10
+    user: ubuntu
+    key_file: ~/.ssh/id_rsa
+  - name: prod-web2
+    host: 192.168.10.11
+    user: ubuntu
+    key_file: ~/.ssh/id_rsa
+
+groups:
+  production:
+    - prod-web1
+    - prod-web2

@@ -1,0 +1,43 @@
+# Synchronize files to remote servers
+# Demonstrates: copy and fetch tasks
+
+- name: Deploy configuration files
+  hosts: targets
+  vars:
+    config_dir: /etc/myapp
+  tasks:
+    - name: Create config directory
+      shell: mkdir -p {{ .config_dir }}
+
+    - name: Upload nginx config
+      copy:
+        src: ./configs/nginx.conf
+        dest: "{{ .config_dir }}/nginx.conf"
+        mode: "0644"
+
+    - name: Upload app config
+      copy:
+        src: ./configs/app.yaml
+        dest: "{{ .config_dir }}/app.yaml"
+        mode: "0644"
+
+    - name: Upload deploy script
+      copy:
+        src: ./scripts/deploy.sh
+        dest: "/usr/local/bin/deploy.sh"
+        mode: "0755"
+
+    - name: Fetch remote logs for analysis
+      fetch:
+        src: /var/log/myapp/app.log
+        dest: "./logs/{{ .host }}_app.log"
+      ignore_errors: true
+
+    - name: Fetch remote config for backup
+      fetch:
+        src: "{{ .config_dir }}/app.yaml"
+        dest: "./backups/{{ .host }}_app.yaml"
+      ignore_errors: true
+
+    - name: List uploaded files
+      shell: ls -la {{ .config_dir }}/

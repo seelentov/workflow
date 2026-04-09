@@ -1,0 +1,33 @@
+# Example: Monitoring server inventory
+# Demonstrates: mixed authentication, multiple groups
+
+hosts:
+  - name: monitor1
+    host: 172.16.0.10
+    user: admin
+    key_file: ~/.ssh/id_rsa
+  - name: node1
+    host: 172.16.0.20
+    user: admin
+    key_file: ~/.ssh/id_rsa
+  - name: node2
+    host: 172.16.0.21
+    user: admin
+    key_file: ~/.ssh/id_rsa
+  - name: node3
+    host: 172.16.0.22
+    user: admin
+    key_file: ~/.ssh/id_rsa
+
+groups:
+  monitoring:
+    - monitor1
+  nodes:
+    - node1
+    - node2
+    - node3
+  all:
+    - monitor1
+    - node1
+    - node2
+    - node3

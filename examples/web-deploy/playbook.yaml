@@ -1,0 +1,53 @@
+# Deploy a web application
+- name: Deploy web application
+  hosts: web
+  vars:
+    app_dir: /opt/myapp
+    app_user: www-data
+  tasks:
+    - name: Create application directory
+      shell: mkdir -p {{ .app_dir }}
+
+    - name: Set directory ownership
+      shell: chown -R {{ .app_user }}:{{ .app_user }} {{ .app_dir }}
+
+    - name: Upload application binary
+      copy:
+        src: ./myapp
+        dest: "{{ .app_dir }}/myapp"
+        mode: "0755"
+
+    - name: Upload configuration file
+      copy:
+        src: ./config.yaml
+        dest: "{{ .app_dir }}/config.yaml"
+        mode: "0644"
+
+    - name: Create systemd service
+      shell: |
+        cat > /etc/systemd/system/myapp.service <<EOF
+        [Unit]
+        Description=My Web Application
+        After=network.target
+
+        [Service]
+        Type=simple
+        User={{ .app_user }}
+        WorkingDirectory={{ .app_dir }}
+        ExecStart={{ .app_dir }}/myapp
+        Restart=always
+
+        [Install]
+        WantedBy=multi-user.target
+        EOF
+
+    - name: Reload systemd daemon
+      shell: systemctl daemon-reload
+
+    - name: Enable and start service
+      shell: systemctl enable --now myapp.service
+      ignore_errors: true
+
+    - name: Check service status
+      shell: systemctl status myapp.service
+      ignore_errors: true

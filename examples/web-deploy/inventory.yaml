@@ -1,0 +1,27 @@
+# Example: Deploy a web application to multiple servers
+# Demonstrates: basic shell tasks, copy, host groups, vars
+
+hosts:
+  - name: web1
+    host: 192.168.1.10
+    user: ubuntu
+    key_file: ~/.ssh/id_rsa
+  - name: web2
+    host: 192.168.1.11
+    user: ubuntu
+    key_file: ~/.ssh/id_rsa
+  - name: db1
+    host: 192.168.1.20
+    user: root
+    key_file: ~/.ssh/id_rsa
+
+groups:
+  web:
+    - web1
+    - web2
+  db:
+    - db1
+  all_servers:
+    - web1
+    - web2
+    - db1

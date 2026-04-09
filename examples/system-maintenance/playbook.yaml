@@ -1,0 +1,48 @@
+# Routine system maintenance across all servers
+# Demonstrates: shell commands, ignore_errors, sequential tasks
+
+- name: System maintenance
+  hosts: all_servers
+  tasks:
+    - name: Update package lists
+      shell: apt-get update -y
+      ignore_errors: true
+
+    - name: Upgrade installed packages
+      shell: apt-get upgrade -y
+      ignore_errors: true
+
+    - name: Clean package cache
+      shell: apt-get autoremove -y && apt-get clean
+
+    - name: Check disk usage
+      shell: df -h
+
+    - name: Check memory usage
+      shell: free -h
+
+    - name: Check system load
+      shell: uptime && top -bn1 | head -20
+
+    - name: List recent failed services
+      shell: systemctl --failed --no-pager
+      ignore_errors: true
+
+    - name: Clean old log files
+      shell: find /var/log -name "*.log.gz" -mtime +30 -delete
+      ignore_errors: true
+
+    - name: Remove old kernels (Ubuntu/Debian)
+      shell: |
+        apt-get purge -y $(dpkg -l 'linux-image-*' | grep '^ii' | awk '{print $2}' | grep -v $(uname -r) | tail -n 3) 2>/dev/null || true
+      ignore_errors: true
+
+    - name: Reboot if required
+      shell: |
+        if [ -f /var/run/reboot-required ]; then
+          echo "Reboot required, initiating..."
+          shutdown -r +1 "Scheduled reboot by workflow"
+        else
+          echo "No reboot required"
+        fi
+      ignore_errors: true

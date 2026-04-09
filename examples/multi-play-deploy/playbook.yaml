@@ -1,0 +1,62 @@
+# Multi-tier deployment: database -> app servers -> load balancer
+# Demonstrates: multiple plays with different targets, vars propagation
+
+- name: Prepare database
+  hosts: database
+  vars:
+    db_version: "2.1.0"
+  tasks:
+    - name: Run database migrations
+      shell: |
+        echo "Running migrations to version {{ .db_version }}"
+        # psql -f /opt/migrations/v{{ .db_version }}.sql
+      ignore_errors: true
+
+    - name: Verify database health
+      shell: |
+        echo "Database migration completed"
+        # pg_isready || echo "DB not ready"
+
+- name: Deploy application servers
+  hosts: app_servers
+  vars:
+    app_dir: /opt/webapp
+    app_version: "3.5.2"
+  tasks:
+    - name: Stop application service
+      shell: systemctl stop webapp
+      ignore_errors: true
+
+    - name: Create deployment directory
+      shell: mkdir -p {{ .app_dir }}/releases/{{ .app_version }}
+
+    - name: Upload application archive
+      copy:
+        src: ./webapp-{{ .app_version }}.tar.gz
+        dest: "/tmp/webapp-{{ .app_version }}.tar.gz"
+        mode: "0644"
+
+    - name: Extract application
+      shell: tar xzf /tmp/webapp-{{ .app_version }}.tar.gz -C {{ .app_dir }}/releases/{{ .app_version }}
+
+    - name: Update symlink to new version
+      shell: ln -sfn {{ .app_dir }}/releases/{{ .app_version }} {{ .app_dir }}/current
+
+    - name: Start application service
+      shell: systemctl start webapp
+
+    - name: Verify application is running
+      shell: systemctl is-active webapp
+
+- name: Update load balancer
+  hosts: loadbalancer
+  tasks:
+    - name: Reload load balancer config
+      shell: |
+        echo "Updating upstream servers..."
+        nginx -t && systemctl reload nginx
+      ignore_errors: true
+
+    - name: Verify load balancer health
+      shell: |
+        curl -s -o /dev/null -w "%{http_code}" http://localhost/health || echo "Health check pending"

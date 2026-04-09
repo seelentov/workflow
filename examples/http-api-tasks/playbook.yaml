@@ -1,0 +1,88 @@
+# Perform HTTP API operations
+# Demonstrates: http task with various methods, auth, body types, and register
+
+- name: API interaction tasks
+  hosts: api_runner
+  vars:
+    api_url: https://jsonplaceholder.typicode.com
+    api_token: my-secret-token
+  tasks:
+    - name: Fetch list of posts (GET)
+      http:
+        method: GET
+        url: "{{ .api_url }}/posts"
+        timeout: 30s
+        register: posts_response
+
+    - name: Print fetched posts count
+      shell: echo "Got {{ .posts_response.status }} with posts count"
+
+    - name: Create a new post (POST with JSON)
+      http:
+        method: POST
+        url: "{{ .api_url }}/posts"
+        json:
+          title: "New Post"
+          body: "This is the body"
+          userId: 1
+        expect_status: [201]
+        register: new_post
+
+    - name: Print created post ID
+      shell: echo "Created post, status: {{ .new_post.status }}"
+
+    - name: Update the post (PUT)
+      http:
+        method: PUT
+        url: "{{ .api_url }}/posts/1"
+        json:
+          id: 1
+          title: "Updated Title"
+          body: "Updated body content"
+          userId: 1
+        register: update_response
+
+    - name: Delete the post (DELETE)
+      http:
+        method: DELETE
+        url: "{{ .api_url }}/posts/1"
+        expect_status: [200]
+
+    - name: POST with Bearer token auth
+      http:
+        method: GET
+        url: "{{ .api_url }}/users/1"
+        bearer: "{{ .api_token }}"
+        register: user_response
+
+    - name: POST with Basic Auth
+      http:
+        method: POST
+        url: "https://httpbin.org/post"
+        basic_auth:
+          username: user
+          password: pass
+        json:
+          test: data
+        register: basic_auth_response
+
+    - name: POST with form data
+      http:
+        method: POST
+        url: "https://httpbin.org/post"
+        form:
+          field1: value1
+          field2: value2
+        register: form_response
+
+    - name: Custom headers request
+      http:
+        method: GET
+        url: "https://httpbin.org/headers"
+        headers:
+          X-Custom-Header: "workflow-agent"
+          Accept: "application/json"
+        register: headers_response
+
+    - name: Print final status
+      shell: echo "All API tasks completed successfully"

@@ -1,0 +1,100 @@
+# Playbook with tagged tasks for selective execution
+# Demonstrates: tags feature - run specific subsets of tasks
+#
+# Usage examples:
+#   workflow run playbook.yaml -i inventory.yaml                    # run all tasks
+#   workflow run playbook.yaml -i inventory.yaml --tags deploy      # run only deploy tasks
+#   workflow run playbook.yaml -i inventory.yaml --tags config      # run only config tasks
+#   workflow run playbook.yaml -i inventory.yaml --tags deploy,config
+
+- name: Full server setup with tags
+  hosts: production
+  vars:
+    app_dir: /opt/webapp
+  tasks:
+    - name: Install prerequisites
+      shell: apt-get update && apt-get install -y curl wget git
+      tags: [prerequisites, setup]
+
+    - name: Create application user
+      shell: useradd -m -s /bin/bash appuser || true
+      tags: [setup]
+
+    - name: Create application directories
+      shell: mkdir -p {{ .app_dir }}/{{ .item }}
+      tags: [setup, dirs]
+
+    - name: Deploy application code
+      shell: |
+        echo "Deploying application to {{ .app_dir }}"
+        # git clone or upload code here
+      tags: [deploy]
+
+    - name: Upload configuration
+      copy:
+        src: ./app.conf
+        dest: "{{ .app_dir }}/app.conf"
+        mode: "0644"
+      tags: [deploy, config]
+
+    - name: Set up environment file
+      shell: |
+        cat > {{ .app_dir }}/.env <<EOF
+        NODE_ENV=production
+        APP_DIR={{ .app_dir }}
+        EOF
+      tags: [deploy, config]
+
+    - name: Install application dependencies
+      shell: |
+        echo "Installing dependencies..."
+        # npm install / pip install / etc.
+      tags: [deploy, dependencies]
+
+    - name: Configure firewall rules
+      shell: |
+        ufw allow 80/tcp
+        ufw allow 443/tcp
+        ufw reload
+      ignore_errors: true
+      tags: [config, security]
+
+    - name: Set up log rotation
+      shell: |
+        cat > /etc/logrotate.d/webapp <<EOF
+        {{ .app_dir }}/logs/*.log {
+          daily
+          rotate 14
+          compress
+          missingok
+        }
+        EOF
+      tags: [config, logging]
+
+    - name: Configure monitoring agent
+      shell: |
+        echo "Setting up monitoring..."
+      tags: [config, monitoring]
+
+    - name: Start application service
+      shell: systemctl start webapp
+      ignore_errors: true
+      tags: [deploy, service]
+
+    - name: Enable service on boot
+      shell: systemctl enable webapp
+      ignore_errors: true
+      tags: [deploy, service]
+
+    - name: Run smoke tests
+      shell: |
+        curl -f http://localhost/health || echo "Service not responding yet"
+      ignore_errors: true
+      tags: [test, verify]
+
+    - name: Print deployment summary
+      shell: |
+        echo "Deployment completed at $(date)"
+        echo "App directory: {{ .app_dir }}"
+        systemctl status webapp 2>/dev/null | head -10
+      tags: [verify]

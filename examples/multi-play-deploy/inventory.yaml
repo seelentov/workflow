@@ -1,0 +1,29 @@
+# Example: Multi-tier application deployment
+# Demonstrates: multiple plays targeting different host groups
+
+hosts:
+  - name: lb1
+    host: 10.0.0.10
+    user: deploy
+    key_file: ~/.ssh/id_rsa
+  - name: app1
+    host: 10.0.1.10
+    user: deploy
+    key_file: ~/.ssh/id_rsa
+  - name: app2
+    host: 10.0.1.11
+    user: deploy
+    key_file: ~/.ssh/id_rsa
+  - name: db1
+    host: 10.0.2.10
+    user: postgres
+    key_file: ~/.ssh/id_rsa
+
+groups:
+  loadbalancer:
+    - lb1
+  app_servers:
+    - app1
+    - app2
+  database:
+    - db1

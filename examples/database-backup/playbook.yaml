@@ -1,0 +1,27 @@
+# Backup PostgreSQL databases
+- name: Backup PostgreSQL databases
+  hosts: database
+  tasks:
+    - name: Create backup directory
+      shell: mkdir -p {{ .backup_dir }}
+
+    - name: Run pg_dump
+      shell: |
+        pg_dump {{ .db_name }} > {{ .backup_dir }}/{{ .db_name }}_$(date +%Y%m%d_%H%M%S).sql
+
+    - name: Compress backup
+      shell: |
+        gzip {{ .backup_dir }}/{{ .db_name }}_*.sql 2>/dev/null || true
+
+    - name: Remove backups older than 7 days
+      shell: |
+        find {{ .backup_dir }} -name "*.sql.gz" -mtime +7 -delete
+
+    - name: List current backups
+      shell: ls -lh {{ .backup_dir }}/
+
+    - name: Fetch latest backup to local machine
+      fetch:
+        src: "{{ .backup_dir }}/{{ .db_name }}_$(date +%Y%m%d).sql.gz"
+        dest: "./backups/{{ .host }}_latest.sql.gz"
+      ignore_errors: true

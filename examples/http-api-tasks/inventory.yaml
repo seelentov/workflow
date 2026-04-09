@@ -1,0 +1,12 @@
+# Example: Single management node for API tasks
+# Demonstrates: inventory with single host for HTTP tasks
+
+hosts:
+  - name: localhost-runner
+    host: 127.0.0.1
+    user: runner
+    key_file: ~/.ssh/id_rsa
+
+groups:
+  api_runner:
+    - localhost-runner

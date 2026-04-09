@@ -1,0 +1,22 @@
+# Example: System maintenance inventory
+# Demonstrates: root access, multiple server types
+
+hosts:
+  - name: web-server
+    host: 10.10.1.10
+    user: root
+    key_file: ~/.ssh/id_rsa
+  - name: app-server
+    host: 10.10.1.20
+    user: root
+    key_file: ~/.ssh/id_rsa
+  - name: cache-server
+    host: 10.10.1.30
+    user: root
+    key_file: ~/.ssh/id_rsa
+
+groups:
+  all_servers:
+    - web-server
+    - app-server
+    - cache-server

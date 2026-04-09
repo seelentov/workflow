@@ -1,0 +1,17 @@
+# Example: File synchronization servers
+# Demonstrates: copy and fetch tasks between local and remote
+
+hosts:
+  - name: server1
+    host: 192.168.1.50
+    user: deploy
+    key_file: ~/.ssh/id_rsa
+  - name: server2
+    host: 192.168.1.51
+    user: deploy
+    key_file: ~/.ssh/id_rsa
+
+groups:
+  targets:
+    - server1
+    - server2

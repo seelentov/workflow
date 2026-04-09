@@ -1,0 +1,17 @@
+# Example: Conditional tasks based on shell expressions
+# Demonstrates: when conditionals
+
+hosts:
+  - name: ubuntu-server
+    host: 192.168.5.10
+    user: ubuntu
+    key_file: ~/.ssh/id_rsa
+  - name: centos-server
+    host: 192.168.5.20
+    user: root
+    key_file: ~/.ssh/id_rsa
+
+groups:
+  mixed_os:
+    - ubuntu-server
+    - centos-server
